@@ -59,9 +59,9 @@ public enum Dir implements LocalDirection, StringRepresentable {
 	    }
 	}
 
-	private @NotNull Direction[] dirs;
+	private final @NotNull Direction[] dirs;
 	
-	private @NotNull BlockPos[] offsets = new BlockPos[6];
+	private final @NotNull BlockPos[] offsets = new BlockPos[6];
 
 	Dir(Direction... dirs) {
 		this.dirs = dirs;
