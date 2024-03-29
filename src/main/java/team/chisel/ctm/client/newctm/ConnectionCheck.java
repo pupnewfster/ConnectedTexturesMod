@@ -74,7 +74,7 @@ public class ConnectionCheck {
 
         // bad API user
         if (con == null) {
-            throw new IllegalStateException("Error, received null blockstate as facade from block " + world.getBlockState(connection));
+            throw new IllegalStateException("Error, received null blockstate appearance from block " + world.getBlockState(connection));
         }
 
         boolean ret = stateComparator(state, con, dir);

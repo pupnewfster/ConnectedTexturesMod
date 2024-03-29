@@ -92,7 +92,7 @@ public class TextureCTM<T extends TextureTypeCTM> extends AbstractTexture<T> imp
     @Override
     public boolean connectTo(ConnectionCheck ctm, BlockState from, BlockState to, Direction dir) {
         try {
-            return ((connectionChecks == null ? StateComparisonCallback.DEFAULT.connects(ctm, from, to, dir) : connectionChecks.test(dir, to)) ? 1 : 0) == 1;
+            return ((connectionChecks == null ? StateComparisonCallback.DEFAULT.connects(ctm, from, to, dir) : connectionChecks.test(dir, to) && connectionChecks.test(dir, from)) ? 1 : 0) == 1;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
