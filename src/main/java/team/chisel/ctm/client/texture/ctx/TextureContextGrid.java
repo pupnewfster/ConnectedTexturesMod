@@ -2,7 +2,6 @@ package team.chisel.ctm.client.texture.ctx;
 
 import java.util.EnumMap;
 
-import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.google.common.base.Preconditions;
@@ -11,6 +10,8 @@ import lombok.Value;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.BlockAndTintGetter;
+import org.jetbrains.annotations.NotNull;
 import team.chisel.ctm.client.texture.render.TextureMap;
 import team.chisel.ctm.client.util.FaceOffset;
 
@@ -26,8 +27,8 @@ public abstract class TextureContextGrid extends TextureContextPosition {
     
     public static class Patterned extends TextureContextGrid {
 
-        public Patterned(BlockPos pos, TextureMap tex, boolean applyOffset) {
-            super(pos, tex, applyOffset);
+        public Patterned(BlockAndTintGetter world, BlockPos pos, TextureMap tex, boolean applyOffset) {
+            super(world, pos, tex, applyOffset);
         }
 
         @Override
@@ -75,8 +76,8 @@ public abstract class TextureContextGrid extends TextureContextPosition {
         
         private static final java.util.Random rand = new java.util.Random();
         
-        public Random(BlockPos pos, TextureMap tex, boolean applyOffset) {
-            super(pos, tex, applyOffset);
+        public Random(BlockAndTintGetter world, BlockPos pos, TextureMap tex, boolean applyOffset) {
+            super(world, pos, tex, applyOffset);
         }
 
         @Override
@@ -96,18 +97,18 @@ public abstract class TextureContextGrid extends TextureContextPosition {
     private final long serialized;
 
     @SuppressWarnings("null")
-    public TextureContextGrid(BlockPos pos, TextureMap tex, boolean applyOffset) {
+    public TextureContextGrid(BlockAndTintGetter world, BlockPos pos, TextureMap tex, boolean applyOffset) {
         super(pos);
 
         // Since we can only return a long, we must limit to 10 bits of data per face = 60 bits
         Preconditions.checkArgument(tex.getXSize() * tex.getYSize() < 1024, "V* Texture size too large for texture %s", tex.getParticle());
         
         if (applyOffset) {
-            applyOffset();
+            applyOffset(world);
         }
         
         long serialized = 0;
-        for (@Nonnull Direction side : Direction.values()) {
+        for (@NotNull Direction side : Direction.values()) {
             BlockPos modifiedPosition = position.offset(FaceOffset.getBlockPosOffsetFromFaceOffset(side, tex.getXOffset(), tex.getYOffset()));
 
             Point2i coords = calculateTextureCoord(modifiedPosition, tex.getXSize(), tex.getYSize(), side);

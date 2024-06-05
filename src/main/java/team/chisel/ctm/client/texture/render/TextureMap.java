@@ -4,10 +4,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonObject;
@@ -15,6 +11,9 @@ import com.google.gson.JsonObject;
 import lombok.Getter;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockAndTintGetter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import team.chisel.ctm.api.texture.ISubmap;
 import team.chisel.ctm.api.texture.ITextureContext;
 import team.chisel.ctm.api.util.TextureInfo;
@@ -60,8 +59,8 @@ public class TextureMap extends AbstractTexture<TextureTypeMap> {
             }
             
             @Override
-            public ITextureContext getContext(@Nonnull BlockPos pos, @Nonnull TextureMap tex) {
-                return new TextureContextGrid.Random(pos, tex, true);
+            public ITextureContext getContext(@NotNull BlockAndTintGetter world, @NotNull BlockPos pos, @NotNull TextureMap tex) {
+                return new TextureContextGrid.Random(world, pos, tex, true);
             }
         },
         PATTERNED {
@@ -96,15 +95,15 @@ public class TextureMap extends AbstractTexture<TextureTypeMap> {
             }
             
             @Override
-            public ITextureContext getContext(@Nonnull BlockPos pos, @Nonnull TextureMap tex) {
-                return new TextureContextGrid.Patterned(pos, tex, true);
+            public ITextureContext getContext(@NotNull BlockAndTintGetter world, @NotNull BlockPos pos, @NotNull TextureMap tex) {
+                return new TextureContextGrid.Patterned(world, pos, tex, true);
             }
         };
 
         protected abstract List<BakedQuad> transformQuad(TextureMap tex, BakedQuad quad, @Nullable ITextureContext context, int quadGoal);
         
-        @Nonnull
-        public ITextureContext getContext(@Nonnull BlockPos pos, @Nonnull TextureMap tex) {
+        @NotNull
+        public ITextureContext getContext(@NotNull BlockAndTintGetter world, @NotNull BlockPos pos, @NotNull TextureMap tex) {
             return new TextureContextPosition(pos);
         }
     }

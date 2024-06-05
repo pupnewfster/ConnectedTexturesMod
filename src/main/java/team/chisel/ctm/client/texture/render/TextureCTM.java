@@ -7,7 +7,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.google.common.cache.Cache;
@@ -21,10 +20,12 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.core.Direction;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 import team.chisel.ctm.Configurations;
 import team.chisel.ctm.api.texture.ITextureContext;
 import team.chisel.ctm.api.util.TextureInfo;
 import team.chisel.ctm.client.newctm.ConnectionCheck;
+import team.chisel.ctm.client.newctm.ITextureConnection;
 import team.chisel.ctm.client.texture.ctx.TextureContextCTM;
 import team.chisel.ctm.client.texture.type.TextureTypeCTM;
 import team.chisel.ctm.client.util.BlockstatePredicateParser;
@@ -35,7 +36,7 @@ import team.chisel.ctm.client.util.Quad;
 
 @ParametersAreNonnullByDefault
 @Accessors(fluent = true)
-public class TextureCTM<T extends TextureTypeCTM> extends AbstractTexture<T> {
+public class TextureCTM<T extends TextureTypeCTM> extends AbstractTexture<T> implements ITextureConnection {
 
     private static final BlockstatePredicateParser predicateParser = new BlockstatePredicateParser();
 
@@ -88,9 +89,10 @@ public class TextureCTM<T extends TextureTypeCTM> extends AbstractTexture<T> {
         this.connectionChecks = info.getInfo().map(obj -> predicateParser.parse(obj.get("connect_to"))).orElse(null);
     }
 
+    @Override
     public boolean connectTo(ConnectionCheck ctm, BlockState from, BlockState to, Direction dir) {
         try {
-            return ((connectionChecks == null ? StateComparisonCallback.DEFAULT.connects(ctm, from, to, dir) : connectionChecks.test(dir, to)) ? 1 : 0) == 1;
+            return ((connectionChecks == null ? StateComparisonCallback.DEFAULT.connects(ctm, from, to, dir) : connectionChecks.test(dir, to) && connectionChecks.test(dir, from)) ? 1 : 0) == 1;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -99,14 +101,14 @@ public class TextureCTM<T extends TextureTypeCTM> extends AbstractTexture<T> {
     @Override
     public List<BakedQuad> transformQuad(BakedQuad bq, ITextureContext context, int quadGoal) {
         Quad quad = makeQuad(bq, context);
-        if (context == null || Configurations.disableCTM) {
+        if (context == null || Configurations.isDisabled()) {
             return Collections.singletonList(quad.transformUVs(sprites[0]).rebake());
         }
 
         Quad[] quads = quad.subdivide(4);
         
         int[] ctm = ((TextureContextCTM)context).getCTM(bq.getDirection()).getSubmapIndices();
-        System.out.println(bq.getDirection() + ": " + Arrays.toString(ctm));
+        //System.out.println(bq.getDirection() + ": " + Arrays.toString(ctm));
 
         for (int i = 0; i < quads.length; i++) {
             Quad q = quads[i];

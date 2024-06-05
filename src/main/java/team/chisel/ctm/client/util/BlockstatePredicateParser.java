@@ -15,9 +15,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.InstanceCreator;
@@ -33,13 +30,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.Value;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class BlockstatePredicateParser {
     
@@ -153,7 +152,7 @@ public class BlockstatePredicateParser {
         public Predicate<BlockState> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             if (json.isJsonObject()) {
                 JsonObject obj = json.getAsJsonObject();
-                Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(GsonHelper.getAsString(obj, "block")));
+                Block block = BuiltInRegistries.BLOCK.get(new ResourceLocation(GsonHelper.getAsString(obj, "block")));
                 if (block == Blocks.AIR) {
                     return EMPTY;
                 }
@@ -198,7 +197,7 @@ public class BlockstatePredicateParser {
             throw new JsonSyntaxException("Predicate deserialization expects an object or an array. Found: " + json);
         }
         
-        private Predicate<BlockState> compose(@Nullable Composition composition, @Nonnull Predicate<BlockState> child) {
+        private Predicate<BlockState> compose(@Nullable Composition composition, @NotNull Predicate<BlockState> child) {
             if (composition == null) {
                 return child;
             }
@@ -206,7 +205,7 @@ public class BlockstatePredicateParser {
         }
 
         @SuppressWarnings({ "rawtypes", "unchecked" })
-        private Predicate<BlockState> parsePredicate(@Nonnull Block block, JsonObject obj, JsonDeserializationContext context) {
+        private Predicate<BlockState> parsePredicate(@NotNull Block block, JsonObject obj, JsonDeserializationContext context) {
             ComparisonType compareFunc = GsonHelper.getAsObject(obj, "compare_func", ComparisonType.EQUAL, context, ComparisonType.class);
             obj.remove("compare_func");
             

@@ -5,8 +5,6 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Function;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.google.common.collect.ObjectArrays;
@@ -22,6 +20,8 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import team.chisel.ctm.CTM;
 import team.chisel.ctm.api.texture.ICTMTexture;
 import team.chisel.ctm.api.texture.ITextureType;
@@ -49,7 +49,8 @@ public interface IMetadataSectionCTM {
     
     default ICTMTexture<?> makeTexture(TextureAtlasSprite sprite, Function<Material, TextureAtlasSprite> bakedTextureGetter) {
         IMetadataSectionCTM meta = this;
-        if (getProxy() != null) {
+        boolean hasProxy = getProxy() != null;
+        if (hasProxy) {
             TextureAtlasSprite proxySprite = bakedTextureGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, new ResourceLocation(getProxy())));
             try {
                 meta = ResourceUtil.getMetadata(proxySprite).orElse(new V1());
@@ -57,6 +58,7 @@ public interface IMetadataSectionCTM {
             } catch (IOException e) {
                 CTM.logger.error("Could not parse metadata of proxy, ignoring proxy and using base texture." + getProxy(), e);
                 meta = this;
+                hasProxy = false;
             }
         }
         return meta.getType().makeTexture(new TextureInfo(
@@ -65,7 +67,8 @@ public interface IMetadataSectionCTM {
                         .map(bakedTextureGetter)
                         .toArray(TextureAtlasSprite[]::new),
                 Optional.of(meta.getExtraData()), 
-                meta.getLayer()
+                meta.getLayer(),
+                hasProxy
         ));
     }
     
@@ -164,7 +167,7 @@ public interface IMetadataSectionCTM {
         }
 
         @Override
-        public @Nonnull String getMetadataSectionName() {
+        public @NotNull String getMetadataSectionName() {
             return SECTION_NAME;
         }
     }

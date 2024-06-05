@@ -5,17 +5,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
+import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraftforge.client.RenderTypeHelper;
-import net.minecraftforge.client.model.BakedModelWrapper;
+import net.neoforged.neoforge.client.RenderTypeHelper;
+import net.neoforged.neoforge.client.model.BakedModelWrapper;
 
 import com.google.common.base.Throwables;
 import com.google.common.cache.Cache;
@@ -50,26 +50,25 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.ChunkRenderTypeSet;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.client.model.data.ModelProperty;
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import team.chisel.ctm.api.model.IModelCTM;
 import team.chisel.ctm.api.texture.ICTMTexture;
 import team.chisel.ctm.api.util.RenderContextList;
-import team.chisel.ctm.client.state.CTMContext;
 import team.chisel.ctm.client.util.ProfileUtil;
 
 public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel> {
 
-    private static Cache<ModelResourceLocation, AbstractCTMBakedModel> itemcache = CacheBuilder.newBuilder()
+    private static final Cache<ModelResourceLocation, AbstractCTMBakedModel> itemcache = CacheBuilder.newBuilder()
             .expireAfterAccess(10, TimeUnit.SECONDS)
-            .maximumSize(0)
-            .<ModelResourceLocation, AbstractCTMBakedModel>build();
-    private static Cache<State, AbstractCTMBakedModel> modelcache = CacheBuilder.newBuilder()
+            .build();
+    private static final Cache<State, AbstractCTMBakedModel> modelcache = CacheBuilder.newBuilder()
             .expireAfterAccess(1, TimeUnit.MINUTES)
-//            .maximumSize(5000)
-            .maximumSize(0)
-            .<State, AbstractCTMBakedModel>build();
+            .maximumSize(5000)
+            .build();
 
     public static void invalidateCaches()
     {
@@ -87,16 +86,16 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
         @Override
         @SneakyThrows
         public BakedModel resolve(BakedModel originalModel, ItemStack stack, ClientLevel world, LivingEntity entity, int unknown) {
+            ModelResourceLocation mrl = ModelUtil.getMesh(stack);
+            if (mrl == ModelBakery.MISSING_MODEL_LOCATION) {
+                // this must be a missing/invalid model
+                return Minecraft.getInstance().getBlockRenderer().getBlockModelShaper().getModelManager().getMissingModel();
+            }
             Block block = null;
             if (stack.getItem() instanceof BlockItem blockItem) {
                 block = blockItem.getBlock();
             }
             final BlockState state = block == null ? null : block.defaultBlockState();
-            ModelResourceLocation mrl = ModelUtil.getMesh(stack);
-            if (mrl == null) {
-                // this must be a missing/invalid model
-                return Minecraft.getInstance().getBlockRenderer().getBlockModelShaper().getModelManager().getMissingModel();
-            }
             RandomSource random = RandomSource.create();
             random.setSeed(42L);
             return itemcache.get(mrl, () -> createModel(state, model, getParent(random), null, random, ModelData.EMPTY, null));
@@ -107,39 +106,19 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
     @RequiredArgsConstructor 
     @ToString
     private static class State {
-        private final @Nonnull BlockState cleanState;
+        private final @NotNull BlockState cleanState;
         private final @Nullable Object2LongMap<ICTMTexture<?>> serializedContext;
-        private final @Nonnull BakedModel parent;
+        private final @NotNull BakedModel parent;
         private final @Nullable RenderType layer;
         
         @Override
         public boolean equals(Object obj) {
             if (this == obj)
                 return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
+            if (obj == null || getClass() != obj.getClass())
                 return false;
             State other = (State) obj;
-            
-            if (cleanState != other.cleanState) {
-                return false;
-            }
-            if (parent != other.parent) {
-                return false;
-            }
-            if (layer != other.layer) {
-                return false;
-            }
-
-            if (serializedContext == null) {
-                if (other.serializedContext != null) {
-                    return false;
-                }
-            } else if (!serializedContext.equals(other.serializedContext)) {
-                return false;
-            }
-            return true;
+            return cleanState == other.cleanState && parent == other.parent && layer == other.layer && Objects.equals(serializedContext, other.serializedContext);
         }
         
         @Override
@@ -156,14 +135,14 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
     }
     
     @Getter
-    private final @Nonnull IModelCTM model;
-    private final @Nonnull Overrides overrides = new Overrides();
+    private final @NotNull IModelCTM model;
+    private final @NotNull Overrides overrides = new Overrides();
 
     private final @Nullable RenderType layer;
     protected final List<BakedQuad> genQuads = new ArrayList<>();
     protected final ListMultimap<Direction, BakedQuad> faceQuads = ArrayListMultimap.create();
 
-    public AbstractCTMBakedModel(@Nonnull IModelCTM model, BakedModel parent, @Nullable RenderType layer) {
+    public AbstractCTMBakedModel(@NotNull IModelCTM model, BakedModel parent, @Nullable RenderType layer) {
         super(parent);
         this.model = model;
         this.layer = layer;
@@ -172,17 +151,17 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
 //    private final EnumMap<Direction, ImmutableList<BakedQuad>> noLayerCache = new EnumMap<>(Direction.class);
 //    private ImmutableList<BakedQuad> noSideNoLayerCache;
     
-    protected static final ModelProperty<CTMContext> CTM_CONTEXT = new ModelProperty<>();
+    public static final ModelProperty<RenderContextList> CTM_CONTEXT = new ModelProperty<>();
 
-    @Nonnull
+    @NotNull
     @Override
-    public final List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @Nonnull RandomSource rand) {
+    public final List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand) {
         //Unlike IDynamicBakedModel pass our actual layer as a proxy
         return getQuads(state, side, rand, ModelData.EMPTY, layer);
     }
     
     @Override
-    public final List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @Nonnull RandomSource rand, @Nonnull ModelData extraData, @Nullable RenderType layer) {
+    public final List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand, @NotNull ModelData extraData, @Nullable RenderType layer) {
         ProfileUtil.start("ctm_models");
 
         BakedModel parent = getParent(rand);
@@ -191,27 +170,16 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
         try {
             if (state == null) {
                 return quadLookup(side, layer);
-            } else if (Minecraft.getInstance().level != null && extraData.has(CTM_CONTEXT)) {
-	            ProfileUtil.start("state_creation");
-	            RenderContextList ctxList = extraData.get(CTM_CONTEXT).getContextList(state, this);
-	
-	            Object2LongMap<ICTMTexture<?>> serialized = ctxList.serialized();
-	            ProfileUtil.endAndStart("model_creation"); // state_creation
-	            baked = modelcache.get(new State(state, serialized, parent, layer), () -> createModel(state, model, parent, ctxList, rand, extraData, layer));
-	            ProfileUtil.end(); // model_creation
-	        } else if (state != null)  {
-	            ProfileUtil.start("model_creation");
-	            baked = modelcache.get(new State(state, null, parent, layer), () -> createModel(state, model, parent, null, rand, extraData, layer));
-	            ProfileUtil.end(); // model_creation
-	        } else {
-	            throw new IllegalStateException("Unreachable? Block: " + state + "   layer: " + layer);
-	        }
+            }
+            RenderContextList ctmCtx = extraData.get(CTM_CONTEXT);
+            Object2LongMap<ICTMTexture<?>> serialized = ctmCtx == null ? null : ctmCtx.serialized();
+            ProfileUtil.start("model_creation");
+            baked = modelcache.get(new State(state, serialized, parent, layer), () -> createModel(state, model, parent, ctmCtx, rand, extraData, layer));
+            ProfileUtil.end(); // model_creation
         } catch (Exception e) {
             Throwables.throwIfUnchecked(e);
         	throw new RuntimeException(e);
         }
-        
-        ProfileUtil.end(); // ctm_models
         
         var quads = baked.quadLookup(side, layer);
 //        System.out.println(Objects.toString(state) + "/" + Objects.toString(side) + "/" + Objects.toString(layer == null ? layer : layer.toString().substring(11, 17)) + "/" + (baked.layer == null ? "null" : baked.layer.toString().substring(11, 17)) + ": " + quads.size());
@@ -229,23 +197,22 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
             }
         }
         ProfileUtil.end(); // quad_lookup
+        ProfileUtil.end(); // ctm_models
         
         if (ret == null) {
             throw new IllegalStateException("getQuads called on a model that was not properly initialized - by using getOverrides and/or getModelData");
         }
-        
-        ProfileUtil.end(); // ctm_models
         return ret;
     }
 
     @Override
-    public ChunkRenderTypeSet getRenderTypes(@Nonnull BlockState state, @Nonnull RandomSource rand, @Nonnull ModelData data) {
+    public ChunkRenderTypeSet getRenderTypes(@NotNull BlockState state, @NotNull RandomSource rand, @NotNull ModelData data) {
         ChunkRenderTypeSet extraTypes = layer != null ? ChunkRenderTypeSet.of(layer) : ChunkRenderTypeSet.of(getModel().getExtraLayers(state));
         return ChunkRenderTypeSet.union(extraTypes, super.getRenderTypes(state, rand, data));
     }
 
     @Override
-    public List<RenderType> getRenderTypes(@Nonnull ItemStack itemStack, boolean fabulous) {
+    public List<RenderType> getRenderTypes(@NotNull ItemStack itemStack, boolean fabulous) {
         List<RenderType> ret = new ArrayList<>(super.getRenderTypes(itemStack, fabulous));
         if (this.layer != null) {
             if (!ret.contains(layer)) {
@@ -263,7 +230,7 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
     }
 
     @Override
-    public BakedModel applyTransform(@Nonnull ItemDisplayContext displayContext, @Nonnull PoseStack mat, boolean applyLeftHandTransform) {
+    public BakedModel applyTransform(@NotNull ItemDisplayContext displayContext, @NotNull PoseStack mat, boolean applyLeftHandTransform) {
         // have the original model apply any perspective transforms onto the MatrixStack
         super.applyTransform(displayContext, mat, applyLeftHandTransform);
         // return this model, as we want to draw the item variant quads ourselves
@@ -271,19 +238,21 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
     }
 
     @Override
-    public List<BakedModel> getRenderPasses(@Nonnull ItemStack stack, boolean fabulous) {
+    public List<BakedModel> getRenderPasses(@NotNull ItemStack stack, boolean fabulous) {
         //Make sure our model is the one that gets rendered rather than the internal one
         return List.of(this);
     }
 
-    @Nonnull
+    @NotNull
     @Override
-    public ModelData getModelData(@Nonnull BlockAndTintGetter world, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nonnull ModelData tileData) {
+    public ModelData getModelData(@NotNull BlockAndTintGetter world, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull ModelData tileData) {
         //Add any extra model data the parent model may be expecting or want to add
         tileData = super.getModelData(world, pos, state, tileData);
     	if (!tileData.has(CTM_CONTEXT)) {
-    		//Ensure the position is immutable in case another mod persists the model data longer than the position
-    		tileData = tileData.derive().with(CTM_CONTEXT, new CTMContext(world, pos.immutable())).build();
+            ProfileUtil.start("ctm_state_creation");
+            RenderContextList ctmCtx = new RenderContextList(state, getCTMTextures(), world, pos);
+            ProfileUtil.end();//ctm_state_creation
+            tileData = tileData.derive().with(CTM_CONTEXT, ctmCtx).build();
     	}
     	return tileData;
     }
@@ -291,7 +260,7 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
     /**
      * Random sensitive parent, will proxy to {@link WeightedBakedModel} if possible.
      */
-    @Nonnull
+    @NotNull
     public BakedModel getParent(RandomSource rand) {
         if (getParent() instanceof WeightedBakedModel weightedBakedModel) {
             Optional<WeightedEntry.Wrapper<BakedModel>> model = WeightedRandom.getWeightedItem(weightedBakedModel.list, Math.abs((int)rand.nextLong()) % weightedBakedModel.totalWeight);
@@ -302,17 +271,17 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
         return getParent();
     }
 
-    @Nonnull
+    @NotNull
     public BakedModel getParent() {
         return originalModel;
     }
     
     @Override
-    public @Nonnull ItemOverrides getOverrides() {
+    public @NotNull ItemOverrides getOverrides() {
         return overrides;
     }
     
-    protected abstract AbstractCTMBakedModel createModel(BlockState state, @Nonnull IModelCTM model, BakedModel parent, RenderContextList ctx, RandomSource rand, ModelData data, @Nullable RenderType layer);
+    protected abstract AbstractCTMBakedModel createModel(BlockState state, @NotNull IModelCTM model, BakedModel parent, RenderContextList ctx, RandomSource rand, ModelData data, @Nullable RenderType layer);
 
     @Nullable
     private <T> T applyToParent(RandomSource rand, Function<AbstractCTMBakedModel, T> func) {

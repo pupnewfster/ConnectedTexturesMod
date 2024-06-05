@@ -12,14 +12,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
-import javax.annotation.Nullable;
-
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 
@@ -41,7 +38,9 @@ import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
+import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import team.chisel.ctm.api.model.IModelCTM;
 import team.chisel.ctm.api.texture.ICTMTexture;
 import team.chisel.ctm.api.util.TextureInfo;
@@ -49,7 +48,6 @@ import team.chisel.ctm.client.texture.IMetadataSectionCTM;
 import team.chisel.ctm.client.texture.render.TextureNormal;
 import team.chisel.ctm.client.texture.type.TextureTypeNormal;
 import team.chisel.ctm.client.util.BlockRenderLayer;
-import team.chisel.ctm.client.util.CTMPackReloadListener;
 import team.chisel.ctm.client.util.ResourceUtil;
 
 public class ModelCTM implements IModelCTM {
@@ -94,7 +92,7 @@ public class ModelCTM implements IModelCTM {
                 JsonObject obj = e.getValue().getAsJsonObject();
                 if (!obj.has("ctm_version")) {
                     // This model can only be version 1, TODO improve this
-                    obj.add("ctm_version", new JsonPrimitive(1));
+                    obj.addProperty("ctm_version", 1);
                 }
                 meta = new IMetadataSectionCTM.Serializer().fromJson(obj);
             }
@@ -121,11 +119,7 @@ public class ModelCTM implements IModelCTM {
         } else {
             initializeOverrides(spriteGetter);
             this.textureDependencies.forEach(t -> initializeTexture(new Material(TextureAtlas.LOCATION_BLOCKS, t), spriteGetter));
-            parent = vanillamodel.bake(bakery, mat -> {
-                var ret = spriteGetter.apply(mat);
-                initializeTexture(mat, spriteGetter);
-                return ret;
-            }, modelTransform, modelLocation);
+            parent = vanillamodel.bake(bakery, mat -> initializeTexture(mat, spriteGetter), modelTransform, modelLocation);
             if (!isInitialized()) {
                 this.spriteOverrides = new Int2ObjectOpenHashMap<>();
                 this.textureOverrides = new HashMap<>();
@@ -134,7 +128,7 @@ public class ModelCTM implements IModelCTM {
         return new ModelBakedCTM(this, parent, null);
     }
 	
-	public void initializeTexture(Material m, Function<Material, TextureAtlasSprite> spriteGetter) {
+	public TextureAtlasSprite initializeTexture(Material m, Function<Material, TextureAtlasSprite> spriteGetter) {
 	    TextureAtlasSprite sprite = spriteGetter.apply(m);
 	    Optional<IMetadataSectionCTM> chiselmeta = Optional.empty();
 	    try {
@@ -144,7 +138,7 @@ public class ModelCTM implements IModelCTM {
 	    textures.computeIfAbsent(sprite.contents().name(), s -> {
 	        ICTMTexture<?> tex;
 	        if (meta.isEmpty()) {
-	            tex = new TextureNormal(TextureTypeNormal.INSTANCE, new TextureInfo(new TextureAtlasSprite[] { sprite }, Optional.empty(), null));
+	            tex = new TextureNormal(TextureTypeNormal.INSTANCE, new TextureInfo(new TextureAtlasSprite[] { sprite }, Optional.empty(), null, false));
 	        } else {
 	            tex = meta.get().makeTexture(sprite, spriteGetter);
 	        }
@@ -154,6 +148,7 @@ public class ModelCTM implements IModelCTM {
             }
 	        return tex;
 	    });
+        return sprite;
 	}
 	
 	private void initializeOverrides(Function<Material, TextureAtlasSprite> spriteGetter) {
@@ -223,5 +218,10 @@ public class ModelCTM implements IModelCTM {
     @Nullable
     public ICTMTexture<?> getOverrideTexture(int tintIndex, ResourceLocation sprite) {
         return textureOverrides.get(Pair.of(tintIndex, sprite));
+    }
+
+    @Override
+    public void resolveParents(@NotNull Function<ResourceLocation, UnbakedModel> modelGetter, @NotNull IGeometryBakingContext context) {
+        vanillamodel.resolveParents(modelGetter);
     }
 }

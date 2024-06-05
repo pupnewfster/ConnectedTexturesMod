@@ -2,8 +2,6 @@ package team.chisel.ctm.client.util;
 
 import java.lang.ref.WeakReference;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.google.common.base.Preconditions;
@@ -13,12 +11,16 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.lighting.LevelLightEngine;
 import net.minecraft.world.level.material.FluidState;
-import net.minecraftforge.client.model.data.ModelDataManager;
+import net.neoforged.neoforge.client.model.data.ModelDataManager;
+import net.neoforged.neoforge.common.world.AuxiliaryLightManager;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Used by render state creation to avoid unnecessary block lookups through the world.
@@ -54,12 +56,12 @@ public class RegionCache implements BlockAndTintGetter {
         return ret;
     }
     
-    public @Nonnull RegionCache updateWorld(BlockAndTintGetter passthrough) {
+    public @NotNull RegionCache updateWorld(BlockAndTintGetter passthrough) {
         // We do NOT use getPassthrough() here so as to skip the null-validation - it's obviously valid to be null here
         if (this.passthrough.get() != passthrough) {
             stateCache.clear();
+            this.passthrough = new WeakReference<>(passthrough);
         }
-        this.passthrough = new WeakReference<>(passthrough);
         return this;
     }
 
@@ -72,7 +74,14 @@ public class RegionCache implements BlockAndTintGetter {
     @Override
     public BlockState getBlockState(BlockPos pos) {
         long address = pos.asLong();
-        return stateCache.computeIfAbsent(address, a -> getPassthrough().getBlockState(pos));
+        var state = stateCache.get(address);
+
+        if (state == null) {
+            state = getPassthrough().getBlockState(pos);
+            stateCache.put(address, state);
+        }
+
+        return state;
     }
 
 	@Override
@@ -96,6 +105,11 @@ public class RegionCache implements BlockAndTintGetter {
     }
 
     @Override
+    public float getShade(float normalX, float normalY, float normalZ, boolean shade) {
+        return getPassthrough().getShade(normalX, normalY, normalZ, shade);
+    }
+
+    @Override
     public LevelLightEngine getLightEngine() {
         return getPassthrough().getLightEngine();
     }
@@ -112,5 +126,11 @@ public class RegionCache implements BlockAndTintGetter {
         // we need to make sure to provide the model data manager so that mods that may query it from IForgeBlock#getAppearance
         // can get their block's model data appropriately
         return getPassthrough().getModelDataManager();
+    }
+
+    @Nullable
+    @Override
+    public AuxiliaryLightManager getAuxLightManager(ChunkPos pos) {
+        return getPassthrough().getAuxLightManager(pos);
     }
 }

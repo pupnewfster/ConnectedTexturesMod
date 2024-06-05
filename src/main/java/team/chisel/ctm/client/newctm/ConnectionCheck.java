@@ -2,8 +2,6 @@ package team.chisel.ctm.client.newctm;
 
 import java.util.Optional;
 
-import javax.annotation.Nullable;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -11,8 +9,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 import team.chisel.ctm.Configurations;
-import team.chisel.ctm.api.IFacade;
 import team.chisel.ctm.client.util.CTMLogic.StateComparisonCallback;
 
 @Accessors(fluent = true, chain = true)
@@ -69,14 +67,14 @@ public class ConnectionCheck {
       
         BlockPos obscuringPos = connection.relative(dir);
 
-        boolean disableObscured = disableObscuredFaceCheck.orElse(Configurations.connectInsideCTM);
+        boolean disableObscured = disableObscuredFaceCheck.orElseGet(Configurations::connectInsideCTM);
 
         BlockState con = getConnectionState(world, connection, dir, current);
         BlockState obscuring = disableObscured ? null : getConnectionState(world, obscuringPos, dir, current);
 
         // bad API user
         if (con == null) {
-            throw new IllegalStateException("Error, received null blockstate as facade from block " + world.getBlockState(connection));
+            throw new IllegalStateException("Error, received null blockstate appearance from block " + world.getBlockState(connection));
         }
 
         boolean ret = stateComparator(state, con, dir);
@@ -106,9 +104,7 @@ public class ConnectionCheck {
 
     public BlockState getConnectionState(BlockAndTintGetter world, BlockPos pos, @Nullable Direction side, BlockPos connection) {
         BlockState state = world.getBlockState(pos);
-        if (state.getBlock() instanceof IFacade facade) {
-            return facade.getFacade(world, pos, side, connection);
-        } else if (side != null) {
+        if (side != null) {
             return state.getAppearance(world, pos, side, world.getBlockState(connection), connection);
         }
         return state;
