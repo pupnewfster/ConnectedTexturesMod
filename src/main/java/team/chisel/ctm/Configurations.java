@@ -35,7 +35,7 @@ public class Configurations {
     private Configurations() {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
         disableCTM = builder.comment("Disable connected textures entirely").define("disableCTM", false);
-        connectInsideCTM = builder.comment("Choose whether the inside corner is disconnected on a CTM block - http://imgur.com/eUywLZ4")
+        connectInsideCTM = builder.comment("Choose whether the inside corner is disconnected on a CTM block - https://imgur.com/eUywLZ4")
               .define("connectInsideCTM", false);
         configSpec = builder.build();
     }

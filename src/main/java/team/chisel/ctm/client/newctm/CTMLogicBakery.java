@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.Value;
 import team.chisel.ctm.api.texture.ISubmap;
-import team.chisel.ctm.client.util.Dir;
 import team.chisel.ctm.client.util.Submap;
 
 @RequiredArgsConstructor
@@ -35,11 +34,12 @@ public class CTMLogicBakery {
         public final boolean val;
         public final int bit;
     }
-    
-    private @Value class DesiredState {
-        
-        private final Trinary[] input;
-        private final int output;
+
+    @Value
+    private static class DesiredState {
+
+        Trinary[] input;
+        int output;
         
         public DesiredState(int size, int output) {
             this.input = new Trinary[size];
@@ -99,12 +99,8 @@ public class CTMLogicBakery {
             return buf.toString();
         }
     }
-    
-    @Value
-    public static class OutputFace {
-        int tex;
-        ISubmap uvs;
-        ISubmap face;
+
+    public record OutputFace(int tex, ISubmap uvs, ISubmap face) {
     }
     
     private int size;
@@ -221,7 +217,7 @@ public class CTMLogicBakery {
             writer.name("rules");
             writer.beginArray();
             {
-                for (var e : rules.int2ObjectEntrySet().stream().sorted((e1, e2) -> Integer.compare(e1.getIntKey(), e2.getIntKey())).toList()) {
+                for (var e : rules.int2ObjectEntrySet().stream().sorted(Comparator.comparingInt(Int2ObjectMap.Entry::getIntKey)).toList()) {
                     writer.jsonValue(e.getValue().asJson(orderedPositions));
                 }
             }

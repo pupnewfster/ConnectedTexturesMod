@@ -66,7 +66,7 @@ public enum ConnectionLocations {
      */
     private final Direction normal;
     private final @Nullable LocalDirection dir;
-    private boolean offset;
+    private final boolean offset;
 
     ConnectionLocations(@Nullable LocalDirection dir) {
         this(Direction.SOUTH, dir);
@@ -113,27 +113,26 @@ public enum ConnectionLocations {
     }
 
     public static ConnectionLocations fromFacing(Direction facing){
-        switch (facing){
-            case NORTH: return NORTH;
-            case SOUTH: return SOUTH;
-            case EAST: return EAST;
-            case WEST: return WEST;
-            case UP: return UP;
-            case DOWN: return DOWN;
-            default: return NORTH;
-        }
+        return switch (facing) {
+            case NORTH -> NORTH;
+            case SOUTH -> SOUTH;
+            case EAST -> EAST;
+            case WEST -> WEST;
+            case UP -> UP;
+            case DOWN -> DOWN;
+        };
     }
 
     public static Direction toFacing(ConnectionLocations loc){
-        switch (loc){
-            case NORTH: return Direction.NORTH;
-            case SOUTH: return Direction.SOUTH;
-            case EAST: return Direction.EAST;
-            case WEST: return Direction.WEST;
-            case UP: return Direction.UP;
-            case DOWN: return Direction.DOWN;
-            default: return Direction.NORTH;
-        }
+        return switch (loc) {
+            case NORTH -> Direction.NORTH;
+            case SOUTH -> Direction.SOUTH;
+            case EAST -> Direction.EAST;
+            case WEST -> Direction.WEST;
+            case UP -> Direction.UP;
+            case DOWN -> Direction.DOWN;
+            default -> Direction.NORTH;
+        };
     }
 
     public static List<ConnectionLocations> decode(long data) {
@@ -147,6 +146,6 @@ public enum ConnectionLocations {
     }
 
     public long getMask() {
-        return 1 << ordinal();
+        return 1L << ordinal();
     }
 }

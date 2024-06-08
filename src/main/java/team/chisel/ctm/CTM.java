@@ -35,9 +35,9 @@ public class CTM {
     
     public static CTM instance;
     @Getter
-    private CTMDefinitionManager definitionManager;
+    private final CTMDefinitionManager definitionManager;
     @Getter
-    private CTMPackReloadListener reloadListener;
+    private final CTMPackReloadListener reloadListener;
 
     public CTM(ModContainer modContainer, IEventBus modBus) {
     	instance = this;

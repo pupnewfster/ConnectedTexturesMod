@@ -33,7 +33,7 @@ import team.chisel.ctm.client.util.ResourceUtil;
 @ParametersAreNonnullByDefault
 public interface IMetadataSectionCTM {
     
-    public static final String SECTION_NAME = "ctm";
+    String SECTION_NAME = "ctm";
     
     int getVersion();
     
@@ -56,7 +56,7 @@ public interface IMetadataSectionCTM {
                 meta = ResourceUtil.getMetadata(proxySprite).orElse(new V1());
                 sprite = proxySprite;
             } catch (IOException e) {
-                CTM.logger.error("Could not parse metadata of proxy, ignoring proxy and using base texture." + getProxy(), e);
+                CTM.logger.error("Could not parse metadata of proxy, ignoring proxy and using base texture. {}", getProxy(), e);
                 meta = this;
                 hasProxy = false;
             }

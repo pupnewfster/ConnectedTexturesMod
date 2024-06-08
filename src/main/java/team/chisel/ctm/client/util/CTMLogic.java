@@ -83,8 +83,7 @@ public class CTMLogic implements ICTMLogic, ILogicCache {
     
     public interface StateComparisonCallback {
         
-        public static final StateComparisonCallback DEFAULT = 
-                (ctm, from, to, dir) -> ctm.ignoreStates() ? from.getBlock() == to.getBlock() : from == to;
+        StateComparisonCallback DEFAULT = (ctm, from, to, dir) -> ctm.ignoreStates() ? from.getBlock() == to.getBlock() : from == to;
         
         boolean connects(ConnectionCheck instance, BlockState from, BlockState to, Direction dir);
     }
@@ -92,7 +91,7 @@ public class CTMLogic implements ICTMLogic, ILogicCache {
     /**
      * The Uvs for the specific "magic number" value
      */
-    public static final ISubmap[] uvs = new ISubmap[]{
+    public static final ISubmap[] uvs = {
             //Ctm texture
             Submap.fromPixelScale(4, 4, 0, 0),   // 0
             Submap.fromPixelScale(4, 4, 4, 0),   // 1
@@ -128,7 +127,7 @@ public class CTMLogic implements ICTMLogic, ILogicCache {
 	public ConnectionCheck connectionCheck = new ConnectionCheck();
 	
     // Mapping the different corner indeces to their respective dirs
-	protected static final Dir[][] submapMap = new Dir[][] {
+	protected static final Dir[][] submapMap = {
 	    { BOTTOM, LEFT, BOTTOM_LEFT },
 	    { BOTTOM, RIGHT, BOTTOM_RIGHT },
 	    { TOP, RIGHT, TOP_RIGHT },
@@ -136,7 +135,7 @@ public class CTMLogic implements ICTMLogic, ILogicCache {
 	};
 	
 	protected byte connectionMap;
-	protected int[] submapCache = new int[] { 18, 19, 17, 16 };
+	protected int[] submapCache = { 18, 19, 17, 16 };
 
 
 	public static CTMLogic getInstance() {

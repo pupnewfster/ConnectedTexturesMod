@@ -6,7 +6,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import com.google.common.base.Preconditions;
 
-import lombok.Value;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
@@ -17,13 +16,9 @@ import team.chisel.ctm.client.util.FaceOffset;
 
 @ParametersAreNonnullByDefault
 public abstract class TextureContextGrid extends TextureContextPosition {
-	
-	@Value
-	public static class Point2i {
-	    
-	    int x, y;
 
-	}
+    public record Point2i(int x, int y) {
+    }
     
     public static class Patterned extends TextureContextGrid {
 
@@ -115,7 +110,7 @@ public abstract class TextureContextGrid extends TextureContextPosition {
             textureCoords.put(side, coords);
             
             // Calculate a unique index for a submap (x + (y * x-size)), then shift it left by the max bit storage (10 bits = 1024 unique indices)
-            serialized |= (coords.x + (coords.y * tex.getXSize())) << (10 * side.ordinal());
+            serialized |= (coords.x + ((long) coords.y * tex.getXSize())) << (10 * side.ordinal());
         }
         
         this.serialized = serialized;

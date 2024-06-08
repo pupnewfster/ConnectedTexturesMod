@@ -19,7 +19,6 @@ import team.chisel.ctm.api.model.IModelCTM;
 import team.chisel.ctm.api.model.IModelParser;
 import team.chisel.ctm.client.model.ModelCTM;
 
-@SuppressWarnings("unchecked")
 public class ModelParserV1 implements IModelParser {
     
     private static final Gson GSON = new Gson();
