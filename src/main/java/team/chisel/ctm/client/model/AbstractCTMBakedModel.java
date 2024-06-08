@@ -265,7 +265,7 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
         if (getParent() instanceof WeightedBakedModel weightedBakedModel) {
             Optional<WeightedEntry.Wrapper<BakedModel>> model = WeightedRandom.getWeightedItem(weightedBakedModel.list, Math.abs((int)rand.nextLong()) % weightedBakedModel.totalWeight);
             if (model.isPresent()) {
-                return model.get().getData();
+                return model.get().data();
             }
         }
         return getParent();

@@ -5,8 +5,8 @@
 /.gradle
 /build
 
-## ForgeGradle
-/run
+## NeoGradle
+/runs
 /*.launch
 
 ## eclipse

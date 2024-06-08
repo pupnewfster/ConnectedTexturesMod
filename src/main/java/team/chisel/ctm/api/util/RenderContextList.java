@@ -20,7 +20,6 @@ import team.chisel.ctm.api.texture.ITextureContext;
 import team.chisel.ctm.api.texture.ITextureType;
 import team.chisel.ctm.client.util.IdentityStrategy;
 import team.chisel.ctm.client.util.ProfileUtil;
-import team.chisel.ctm.client.util.RegionCache;
 
 /**
  * List of IBlockRenderContext's
@@ -28,21 +27,17 @@ import team.chisel.ctm.client.util.RegionCache;
 @EqualsAndHashCode(of = "serialized")
 @ParametersAreNonnullByDefault
 public class RenderContextList {
-    
-    private static final ThreadLocal<RegionCache> regionMetaCache = ThreadLocal.withInitial(
-            () -> new RegionCache(BlockPos.ZERO, 0, null));
-    
+
     private final Map<ICTMTexture<?>, ITextureContext> contextMap = Maps.newIdentityHashMap();
     private final Object2LongMap<ICTMTexture<?>> serialized = new Object2LongOpenCustomHashMap<>(new IdentityStrategy<>());
 
     public RenderContextList(BlockState state, Collection<ICTMTexture<?>> textures, final BlockAndTintGetter world, BlockPos pos) {
         ProfileUtil.start("ctm_region_cache_update");
-        BlockAndTintGetter cachedWorld = regionMetaCache.get().updateWorld(world);
     	
     	ProfileUtil.endAndStart("ctm_context_gather");
         for (ICTMTexture<?> tex : textures) {
             ITextureType type = tex.getType();
-            ITextureContext ctx = type.getBlockRenderContext(state, cachedWorld, pos, tex);
+            ITextureContext ctx = type.getBlockRenderContext(state, world, pos, tex);
             if (ctx != null) {
                 contextMap.put(tex, ctx);
             }

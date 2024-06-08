@@ -3,12 +3,10 @@ package team.chisel.ctm;
 import static team.chisel.ctm.CTM.MOD_ID;
 
 import net.minecraft.resources.ResourceLocation;
-import net.neoforged.fml.IExtensionPoint.DisplayTest;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.InterModComms;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.event.lifecycle.InterModEnqueueEvent;
-import net.neoforged.fml.loading.FMLEnvironment;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,7 +24,7 @@ import team.chisel.ctm.client.texture.type.TextureTypeRegistry;
 import team.chisel.ctm.client.util.CTMPackReloadListener;
 import team.chisel.ctm.client.util.TextureMetadataHandler;
 
-@Mod(MOD_ID)
+@Mod(value = MOD_ID, dist = Dist.CLIENT)
 public class CTM {
     
     public static final String MOD_ID = "ctm";
@@ -43,21 +41,18 @@ public class CTM {
 
     public CTM(ModContainer modContainer, IEventBus modBus) {
     	instance = this;
-        if (FMLEnvironment.dist.isClient()) {
-    	    modBus.addListener(this::modelRegistry);
-            modBus.addListener(this::imc);
-    	    modBus.register(TextureMetadataHandler.INSTANCE);
-            Configurations.register(modContainer, modBus);
-    	    
-            TextureTypeRegistry.scan();
+        modBus.addListener(this::modelRegistry);
+        modBus.addListener(this::imc);
+        modBus.register(TextureMetadataHandler.INSTANCE);
+        Configurations.register(modContainer, modBus);
 
-            definitionManager = new CTMDefinitionManager();
-            ReloadableResourceManager resourceManager = (ReloadableResourceManager) Minecraft.getInstance().getResourceManager();
-            resourceManager.registerReloadListener(definitionManager.getReloadListener());
-            reloadListener = new CTMPackReloadListener();
-            modBus.addListener(this::reloadListenersLate);
-    	}
-        ModLoadingContext.get().registerExtensionPoint(DisplayTest.class, () -> new DisplayTest(() -> DisplayTest.IGNORESERVERONLY, (a, b) -> true));
+        TextureTypeRegistry.scan();
+
+        definitionManager = new CTMDefinitionManager();
+        ReloadableResourceManager resourceManager = (ReloadableResourceManager) Minecraft.getInstance().getResourceManager();
+        resourceManager.registerReloadListener(definitionManager.getReloadListener());
+        reloadListener = new CTMPackReloadListener();
+        modBus.addListener(this::reloadListenersLate);
     }
 
     private void modelRegistry(ModelEvent.RegisterGeometryLoaders event) {

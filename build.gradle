@@ -3,14 +3,15 @@ plugins {
     id 'eclipse'
     id 'idea'
     id 'org.ajoberstar.grgit.service' version '5.2.2'
-    id 'net.neoforged.gradle.userdev' version '7.0.128'//https://projects.neoforged.net/neoforged/neogradle
+    id 'net.neoforged.gradle.userdev' version '7.0.142'//https://projects.neoforged.net/neoforged/neogradle
     id 'io.freefair.lombok' version '8.6'
     id 'com.matthewprenger.cursegradle' version '1.4.0'
 }
 
 tasks.named('wrapper', Wrapper).configure {
     //Define wrapper values here so as to not have to always do so when updating gradlew.properties
-    gradleVersion = '8.7'
+    gradleVersion = '8.8'
+    distributionType = Wrapper.DistributionType.ALL
 }
 
 project.ext.gitHash = grgitService.service.get().grgit.log().find().abbreviatedId
@@ -22,21 +23,25 @@ project.buildnumber = System.getenv('BUILD_NUMBER') != null ? System.getenv('BUI
 
 version = "${minecraft_version}-${mod_version}+" + project.buildnumber
 group = "team.chisel.ctm" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = dev ? "CTM_DEV" : "CTM"
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+project.base.archivesName = dev ? "CTM_DEV" : "CTM"
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 minecraft.accessTransformers {
     file(file('src/main/resources/META-INF/accesstransformer.cfg'))
 }
 
 runs {
-    configureEach { net.neoforged.gradle.dsl.common.runs.run.Run run ->
-        run.workingDirectory(file("run"))
+    configureEach {
+        if (hasProperty('forge_force_ansi')) {
+            //Force ansi if declared as a gradle variable, as the auto detection doesn't detect IntelliJ properly
+            // or eclipse's plugin that adds support for ansi escape in console
+            jvmArguments.add("-Dterminal.ansi=${property('forge_force_ansi')}")
+        }
 
-        run.modSources(sourceSets.main, sourceSets.test)
+        modSources(sourceSets.main, sourceSets.test)
 
         // Recommended logging level for the console
-        run.systemProperty('forge.logging.console.level', 'debug')
+        systemProperties.put('forge.logging.console.level', 'debug')
     }
     client {
     }
@@ -44,18 +49,25 @@ runs {
     }
 }
 
-compileJava.options.encoding = 'UTF-8'
-javadoc.options.encoding = 'UTF-8'
+tasks.withType(JavaCompile).configureEach({
+    options.encoding = 'UTF-8'
+    options.compilerArgs.addAll(['-Xmaxerrs', '100000'])
+})
 
-jar {
-    manifest {
-        attributes(["Specification-Title": "ctm",
-                    "Specification-Vendor": "chisel-team",
-                    "Specification-Version": "25.0",
-                    "Implementation-Title": project.name,
-                    "Implementation-Version": "${version}",
-                    "Implementation-Vendor" :"chisel-team",
-                    "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+tasks.withType(Javadoc).configureEach({
+    options.encoding = 'UTF-8'
+})
+
+tasks.named('jar', Jar).configure { Jar jar ->
+    jar.duplicatesStrategy(DuplicatesStrategy.FAIL)
+    jar.manifest {
+        attributes(['Specification-Title': 'ctm',
+                    'Specification-Vendor': 'chisel-team',
+                    'Specification-Version': '25.0',
+                    'Implementation-Title': project.name,
+                    'Implementation-Version': "${version}",
+                    'Implementation-Vendor' : 'chisel-team',
+                    'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
                     ])
     }
 }
@@ -65,14 +77,15 @@ repositories {
 }
 
 dependencies {
-    implementation "net.neoforged:neoforge:${forge_version}"
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    implementation("net.neoforged:neoforge:${forge_version}")
+    testImplementation('org.junit.jupiter:junit-jupiter:5.10.2')
+    testImplementation("net.neoforged:testframework:${forge_version}")
 }
 
-test {
-	useJUnitPlatform()
-	maxHeapSize = '1G'
-	testLogging {
+tasks.named('test', Test).configure { Test test ->
+	test.useJUnitPlatform()
+    test.maxHeapSize = '1G'
+    test.testLogging {
 		events "passed"
 	}
 }
@@ -84,16 +97,16 @@ lombok {
 // Create API jar with sources and compiled files
 tasks.register('apiJar', Jar) {
     duplicatesStrategy(DuplicatesStrategy.FAIL)
-    archiveClassifier.set("api")
-    from sourceSets.main.allSource
-    from sourceSets.main.output
-    include 'team/chisel/ctm/api/**/*'
+    archiveClassifier.set('api')
+    from(sourceSets.main.allSource)
+    from(sourceSets.main.output)
+    include('team/chisel/ctm/api/**/*')
 }
 
 publishing {
-    tasks.publish.dependsOn 'build'
+    tasks.publish.dependsOn('build')
     publications { PublicationContainer publicationContainer ->
-        publicationContainer.register("mavenJava", MavenPublication) { MavenPublication publication ->
+        publicationContainer.register('mavenJava', MavenPublication) { MavenPublication publication ->
             publication.artifactId = 'CTM'
             publication.artifacts = [jar, apiJar]
             //artifact sourceJar

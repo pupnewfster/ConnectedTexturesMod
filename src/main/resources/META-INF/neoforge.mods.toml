@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[2,)"
+loaderVersion="[3,)"
 issueTrackerURL="https://github.com/Chisel-Team/ConnectedTexturesMod/issues/"
 license="GPL-2.0"
 
@@ -20,6 +20,6 @@ license="GPL-2.0"
 [[dependencies.ctm]]
     modId="neoforge"
     type="required"
-    versionRange="[20.4.213,)"
+    versionRange="[20.6.77-beta,)"
     ordering="NONE"
     side="BOTH"
