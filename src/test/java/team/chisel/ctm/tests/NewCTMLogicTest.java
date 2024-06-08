@@ -83,22 +83,22 @@ public class NewCTMLogicTest {
         world.addBlock(BlockPos.ZERO.above(), Blocks.STONE.defaultBlockState());
         output = test.getSubmaps(world, BlockPos.ZERO, Direction.EAST);
         assertEquals(1, output.length);
-        assertEquals(reference[36], output[0].getUvs());
+        assertEquals(reference[36], output[0].uvs());
         // Add a diagonal connection that should not affect the result
         world.addBlock(BlockPos.ZERO.above().north(), Blocks.STONE.defaultBlockState());
         output = test.getSubmaps(world, BlockPos.ZERO, Direction.EAST);
         assertEquals(1, output.length);
-        assertEquals(reference[36], output[0].getUvs());
+        assertEquals(reference[36], output[0].uvs());
         // Add a sideways connection to make it a L shape with no inner corner
         world.addBlock(BlockPos.ZERO.north(), Blocks.STONE.defaultBlockState());
         output = test.getSubmaps(world, BlockPos.ZERO, Direction.EAST);
         assertEquals(1, output.length);
-        assertEquals(reference[37], output[0].getUvs());
+        assertEquals(reference[37], output[0].uvs());
         // Remove the diagonal connection to test inner corner
         world.removeBlock(BlockPos.ZERO.above().north());
         output = test.getSubmaps(world, BlockPos.ZERO, Direction.EAST);
         assertEquals(1, output.length);
-        assertEquals(reference[16], output[0].getUvs());
+        assertEquals(reference[16], output[0].uvs());
     }
 
     private static CustomCTMLogic createTest() {

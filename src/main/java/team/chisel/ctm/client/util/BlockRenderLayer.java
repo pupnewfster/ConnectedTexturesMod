@@ -28,7 +28,7 @@ public enum BlockRenderLayer {
     @Getter
 	private final RenderType renderType;
 	
-	private BlockRenderLayer(Supplier<RenderType> renderType) {
+	BlockRenderLayer(Supplier<RenderType> renderType) {
 	    this.renderType = renderType.get();
 	}
 	

@@ -68,7 +68,7 @@ public class ModelCTM implements IModelCTM {
     private final Set<RenderType> extraLayers = new HashSet<>();
     private final Set<RenderType> extraLayersView = Collections.unmodifiableSet(extraLayers);
 
-    private Map<ResourceLocation, ICTMTexture<?>> textures = new HashMap<>();
+    private final Map<ResourceLocation, ICTMTexture<?>> textures = new HashMap<>();
     
     public ModelCTM(UnbakedModel modelinfo) {
         this.vanillamodel = modelinfo;

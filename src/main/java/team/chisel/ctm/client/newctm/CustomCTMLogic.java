@@ -49,7 +49,7 @@ public class CustomCTMLogic implements ICTMLogic {
             }
             long ret = 0L;
             for (int i = 0; i < cachedSubmapIds.length; i++) {
-                ret |= cachedSubmapIds[i] << (i * stride);
+                ret |= ((long) cachedSubmapIds[i]) << (i * stride);
             }
             return ret;
         }
@@ -106,7 +106,7 @@ public class CustomCTMLogic implements ICTMLogic {
         if (outputSubmapCache == null) {
             Set<ISubmap> seen = new HashSet<>();
             for (var tile : tiles) {
-                seen.add(tile.getFace());
+                seen.add(tile.face());
             }
             outputSubmapCache = List.copyOf(seen);
         }
@@ -115,7 +115,7 @@ public class CustomCTMLogic implements ICTMLogic {
 
     @Override
     public ISubmap getFallbackUvs() {
-        return tiles.length == 0 ? ICTMLogic.super.getFallbackUvs() : tiles[0].getUvs();
+        return tiles.length == 0 ? ICTMLogic.super.getFallbackUvs() : tiles[0].uvs();
     }
 
     private int textureCountCache = -1;
@@ -124,7 +124,7 @@ public class CustomCTMLogic implements ICTMLogic {
         if (textureCountCache < 0) {
             BitSet seen = new BitSet();
             for (var tile : tiles) {
-                seen.set(tile.getTex());
+                seen.set(tile.tex());
             }
             textureCountCache = seen.cardinality();
         }

@@ -60,7 +60,7 @@ public class CTMDefinitionManager {
                         var dataresult = CTMLogicDefinition.CODEC.parse(ops, json);
                         ret.put(id, dataresult.getOrThrow());
                     } catch (Exception e) {
-                        log.error("Failed to read CTM definition: " + id, e);
+                        log.error("Failed to read CTM definition: {}", id, e);
                     } finally {
                         profiler.pop();
                         profiler.pop();
@@ -91,6 +91,7 @@ public class CTMDefinitionManager {
             profiler.endTick();
          }
 
+         @Override
          public String getName() {
             return "CTMDefinitionManager";
          }

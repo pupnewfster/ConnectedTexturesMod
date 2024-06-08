@@ -37,8 +37,8 @@ public class TextureMap extends AbstractTexture<TextureTypeMap> {
                 float intervalX = 1f / tex.getXSize();
                 float intervalY = 1f / tex.getYSize();
                 
-                float maxU = textureCoords.getX() * intervalX;
-                float maxV = textureCoords.getY() * intervalY;
+                float maxU = textureCoords.x() * intervalX;
+                float maxV = textureCoords.y() * intervalY;
                 ISubmap uvs = Submap.fromUnitScale(intervalX, intervalY, maxU - intervalX, maxV - intervalY);
 
                 Quad q = tex.makeQuad(quad, context).setFullbright(tex.fullbright);
@@ -74,8 +74,8 @@ public class TextureMap extends AbstractTexture<TextureTypeMap> {
                 float intervalV = 1f / tex.ySize;
 
                 // throw new RuntimeException(index % variationSize+" and "+index/variationSize);
-                float minU = intervalU * textureCoords.getX();
-                float minV = intervalV * textureCoords.getY();
+                float minU = intervalU * textureCoords.x();
+                float minV = intervalV * textureCoords.y();
 
                 ISubmap submap = Submap.fromUnitScale(intervalU, intervalV, minU, minV);
 

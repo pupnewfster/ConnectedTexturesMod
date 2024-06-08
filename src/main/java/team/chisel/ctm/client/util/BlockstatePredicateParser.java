@@ -27,8 +27,6 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 
 import lombok.RequiredArgsConstructor;
-import lombok.ToString;
-import lombok.Value;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -78,48 +76,30 @@ public class BlockstatePredicateParser {
         
         private final BiFunction<Predicate<BlockState>, Predicate<BlockState>, Predicate<BlockState>> composer;
     }
-    
-    @Value
-    class PropertyPredicate<T extends Comparable<T>> implements Predicate<BlockState> {
-        private Block block;
-        private Property<T> prop;
-        private T value;
-        private ComparisonType type;
-        
+
+    private record PropertyPredicate<T extends Comparable<T>>(Block block, Property<T> prop, T value, ComparisonType type) implements Predicate<BlockState> {
         @Override
         public boolean test(BlockState t) {
             return t.getBlock() == block && type.compareFunc.test(t.getValue(prop).compareTo(value));
         }
     }
-    
-    @Value
-    static class MultiPropertyPredicate<T extends Comparable<T>> implements Predicate<BlockState> {
-        private Block block;
-        private Property<T> prop;
-        private Set<T> validValues;
-        
+
+    private record MultiPropertyPredicate<T extends Comparable<T>>(Block block, Property<T> prop, Set<T> validValues) implements Predicate<BlockState> {
+
         @Override
         public boolean test(BlockState t) {
             return t.getBlock() == block && validValues.contains(t.getValue(prop));
         }
     }
-    
-    @Value
-    class BlockPredicate implements Predicate<BlockState> {
-        private Block block;
-        
+
+    private record BlockPredicate(Block block) implements Predicate<BlockState> {
         @Override
         public boolean test(BlockState t) {
             return t.getBlock() == block;
         }
     }
-    
-    @RequiredArgsConstructor
-    @ToString
-    class PredicateComposition implements Predicate<BlockState> {
-        private final Composition type;
-        private final List<Predicate<BlockState>> composed;
-        
+
+    private record PredicateComposition(Composition type, List<Predicate<BlockState>> composed) implements Predicate<BlockState> {
         @Override
         public boolean test(BlockState t) {
             if (type == Composition.AND) {
@@ -140,7 +120,7 @@ public class BlockstatePredicateParser {
         }
     }
     
-    class PredicateDeserializer implements JsonDeserializer<Predicate<BlockState>> {
+    static class PredicateDeserializer implements JsonDeserializer<Predicate<BlockState>> {
         
         private static final Predicate<BlockState> EMPTY = p -> false;
         
@@ -192,7 +172,7 @@ public class BlockstatePredicateParser {
                         predicates.add(p);
                     }
                 }
-                return predicates.isEmpty() ? EMPTY : predicates.size() == 1 ? predicates.get(0) : new PredicateComposition(Composition.OR, predicates);
+                return predicates.isEmpty() ? EMPTY : predicates.size() == 1 ? predicates.getFirst() : new PredicateComposition(Composition.OR, predicates);
             }
             throw new JsonSyntaxException("Predicate deserialization expects an object or an array. Found: " + json);
         }
@@ -241,7 +221,7 @@ public class BlockstatePredicateParser {
     }
 
     @RequiredArgsConstructor
-    class PredicateMap implements BiPredicate<Direction, BlockState> {
+    static class PredicateMap implements BiPredicate<Direction, BlockState> {
                 
         private final EnumMap<Direction, Predicate<BlockState>> predicates = new EnumMap<>(Direction.class);
         
@@ -264,7 +244,7 @@ public class BlockstatePredicateParser {
                 PredicateMap ret = new PredicateMap();
                 ret.predicates.putAll(context.deserialize(obj, MAP_TYPE));
                 for (Direction dir : Direction.values()) {
-                    ret.predicates.putIfAbsent(dir, Optional.ofNullable(predicateDeserializer.defaultPredicate.get()).orElse(predicateDeserializer.EMPTY));
+                    ret.predicates.putIfAbsent(dir, Optional.ofNullable(predicateDeserializer.defaultPredicate.get()).orElse(PredicateDeserializer.EMPTY));
                 }
                 predicateDeserializer.defaultPredicate.remove();
                 return ret;
@@ -280,10 +260,10 @@ public class BlockstatePredicateParser {
         }
     }
     
-    static final Type MAP_TYPE = new TypeToken<EnumMap<Direction, Predicate<BlockState>>>(){}.getType();
-    static final Type PREDICATE_TYPE = new TypeToken<Predicate<BlockState>>() {}.getType();
+    private static final Type MAP_TYPE = new TypeToken<EnumMap<Direction, Predicate<BlockState>>>(){}.getType();
+    private static final Type PREDICATE_TYPE = new TypeToken<Predicate<BlockState>>() {}.getType();
     
-    final PredicateDeserializer predicateDeserializer = new PredicateDeserializer();
+    private final PredicateDeserializer predicateDeserializer = new PredicateDeserializer();
     
     private final Gson GSON = new GsonBuilder()
                                      .registerTypeAdapter(PREDICATE_TYPE, predicateDeserializer)

@@ -30,6 +30,7 @@ public class ConnectionCheck {
      * A simple check for if the given block can connect to the given direction on the given side.
      * 
      * @param world
+     *            The world the positions are in.
      * @param current
      *            The position of your block.
      * @param connection
@@ -48,6 +49,7 @@ public class ConnectionCheck {
      * A simple check for if the given block can connect to the given direction on the given side.
      * 
      * @param world
+     *            The world the positions are in.
      * @param current
      *            The position of your block.
      * @param connection

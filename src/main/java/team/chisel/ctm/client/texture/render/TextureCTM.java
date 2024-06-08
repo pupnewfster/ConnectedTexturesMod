@@ -14,7 +14,6 @@ import com.google.common.cache.CacheBuilder;
 
 import it.unimi.dsi.fastutil.objects.Object2ByteMap;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.core.Direction;
@@ -48,37 +47,29 @@ public class TextureCTM<T extends TextureTypeCTM> extends AbstractTexture<T> imp
 	
 	@Nullable
 	private final BiPredicate<Direction, BlockState> connectionChecks;
-	
-	@RequiredArgsConstructor
-	private static final class CacheKey {
-		private final BlockState from;
-		private final Direction dir;
-		
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + dir.hashCode();
-			result = prime * result + System.identityHashCode(from);
-			return result;
-		}
 
-		@Override
-		public boolean equals(@Nullable Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			CacheKey other = (CacheKey) obj;
-			if (dir != other.dir)
-				return false;
-			if (from != other.from)
-				return false;
-			return true;
-		}
-	}
+    private record CacheKey(BlockState from, Direction dir) {
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + dir.hashCode();
+            result = prime * result + System.identityHashCode(from);
+            return result;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (this == obj) {
+                return true;
+            } else if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            CacheKey other = (CacheKey) obj;
+            return dir == other.dir && from == other.from;
+        }
+    }
 
 	private final Cache<CacheKey, Object2ByteMap<BlockState>> connectionCache = CacheBuilder.newBuilder().build();
 
@@ -119,7 +110,7 @@ public class TextureCTM<T extends TextureTypeCTM> extends AbstractTexture<T> imp
                 quads[i] = q.grow().transformUVs(sprites[ctm[ctmid] > 15 ? 0 : 1], CTMLogic.uvs[ctm[ctmid]].unitScale());
             }
         }
-        return Arrays.stream(quads).filter(Objects::nonNull).map(q -> q.rebake()).toList();
+        return Arrays.stream(quads).filter(Objects::nonNull).map(Quad::rebake).toList();
     }
     
     @Override

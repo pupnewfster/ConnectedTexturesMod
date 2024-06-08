@@ -15,7 +15,7 @@ public class TextureContextCTM implements ITextureContext {
     
 	protected final TextureCTM<?> tex;
 	
-    private EnumMap<Direction, CTMLogic> ctmData = new EnumMap<>(Direction.class);
+    private final EnumMap<Direction, CTMLogic> ctmData = new EnumMap<>(Direction.class);
 
     private long data;
 

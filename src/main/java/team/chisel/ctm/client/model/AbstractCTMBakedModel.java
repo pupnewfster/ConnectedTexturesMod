@@ -26,9 +26,7 @@ import com.google.common.collect.ListMultimap;
 
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import lombok.ToString;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderType;
@@ -80,7 +78,6 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
     private class Overrides extends ItemOverrides {
                 
         public Overrides() {
-            super();
         }
 
         @Override
@@ -101,26 +98,21 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
             return itemcache.get(mrl, () -> createModel(state, model, getParent(random), null, random, ModelData.EMPTY, null));
         }
     }
-    
-    @Getter 
-    @RequiredArgsConstructor 
-    @ToString
-    private static class State {
-        private final @NotNull BlockState cleanState;
-        private final @Nullable Object2LongMap<ICTMTexture<?>> serializedContext;
-        private final @NotNull BakedModel parent;
-        private final @Nullable RenderType layer;
-        
+
+    private record State(@NotNull BlockState cleanState, @Nullable Object2LongMap<ICTMTexture<?>> serializedContext, @NotNull BakedModel parent,
+                         @Nullable RenderType layer) {
+
         @Override
         public boolean equals(Object obj) {
-            if (this == obj)
+            if (this == obj) {
                 return true;
-            if (obj == null || getClass() != obj.getClass())
+            } else if (obj == null || getClass() != obj.getClass()) {
                 return false;
+            }
             State other = (State) obj;
             return cleanState == other.cleanState && parent == other.parent && layer == other.layer && Objects.equals(serializedContext, other.serializedContext);
         }
-        
+
         @Override
         public int hashCode() {
             final int prime = 31;

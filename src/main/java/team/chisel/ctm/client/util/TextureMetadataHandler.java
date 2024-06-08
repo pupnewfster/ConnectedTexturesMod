@@ -164,7 +164,7 @@ public enum TextureMetadataHandler {
                     try {
                         entry.setValue(wrap(rootModel, baked));
                     } catch (IOException e) {
-                        CTM.logger.error("Could not wrap model " + rl + ". Aborting...", e);
+                        CTM.logger.error("Could not wrap model {}. Aborting...", rl, e);
                     }
                 }
             }

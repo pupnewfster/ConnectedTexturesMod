@@ -1,17 +1,12 @@
 package team.chisel.ctm.client.newctm.json;
 
 import com.mojang.serialization.MapCodec;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.lang3.tuple.Pair;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import team.chisel.ctm.api.texture.ISubmap;
-import team.chisel.ctm.client.util.Submap;
 
 public class SubmapCodecs {
     
