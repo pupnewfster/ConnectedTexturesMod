@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3f;
 
 @Getter
 @ToString
@@ -18,7 +19,7 @@ import net.minecraft.world.phys.Vec3;
 @AllArgsConstructor
 public class VertexData {
 
-    private double posX, posY, posZ;
+    private float posX, posY, posZ;
     private float normalX, normalY, normalZ;
 
     //Store int representations of the colors so that we don't go between ints and doubles when unpacking and repacking a vertex
@@ -33,8 +34,8 @@ public class VertexData {
 
     private Map<VertexFormatElement, int[]> miscData = new HashMap<>();
 
-    public Vec3 getPos() {
-        return new Vec3(posX, posY, posZ);
+    public Vector3f getPos() {
+        return new Vector3f(posX, posY, posZ);
     }
 
     public Vec2 getUV() {
@@ -57,7 +58,7 @@ public class VertexData {
         return this;
     }
 
-    public VertexData pos(double x, double y, double z) {
+    public VertexData pos(float x, float y, float z) {
         this.posX = x;
         this.posY = y;
         this.posZ = z;
@@ -113,15 +114,14 @@ public class VertexData {
     }
 
     public void write(VertexConsumer consumer) {
-        consumer.vertex(posX, posY, posZ);
-        consumer.color(red, green, blue, alpha);
-        consumer.uv(texU, texV);
-        consumer.overlayCoords(overlayU, overlayV);
-        consumer.uv2(lightU, lightV);
-        consumer.normal(normalX, normalY, normalZ);
+        consumer.addVertex(posX, posY, posZ);
+        consumer.setColor(red, green, blue, alpha);
+        consumer.setUv(texU, texV);
+        consumer.setUv1(overlayU, overlayV);
+        consumer.setUv2(lightU, lightV);
+        consumer.setNormal(normalX, normalY, normalZ);
         for (Map.Entry<VertexFormatElement, int[]> entry : miscData.entrySet()) {
             consumer.misc(entry.getKey(), entry.getValue());
         }
-        consumer.endVertex();
     }
 }

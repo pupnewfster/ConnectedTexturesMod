@@ -84,7 +84,7 @@ public abstract class AbstractCTMBakedModel extends BakedModelWrapper<BakedModel
         @SneakyThrows
         public BakedModel resolve(BakedModel originalModel, ItemStack stack, ClientLevel world, LivingEntity entity, int unknown) {
             ModelResourceLocation mrl = ModelUtil.getMesh(stack);
-            if (mrl == ModelBakery.MISSING_MODEL_LOCATION) {
+            if (mrl == ModelBakery.MISSING_MODEL_VARIANT) {
                 // this must be a missing/invalid model
                 return Minecraft.getInstance().getBlockRenderer().getBlockModelShaper().getModelManager().getMissingModel();
             }

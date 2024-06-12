@@ -23,7 +23,6 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
 import net.minecraft.world.phys.Vec2;
-import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
 import team.chisel.ctm.api.texture.ISubmap;
 
@@ -297,7 +296,7 @@ public class Quad {
             }
         }
 
-        Vec3[] positions = new Vec3[vertices.length];
+        Vector3f[] positions = new Vector3f[vertices.length];
         float[][] uvs = new float[vertices.length][];
         for (int i = 0; i < vertices.length; i++) {
             int idx = (firstIndex + i) % vertices.length;
@@ -307,14 +306,15 @@ public class Quad {
         }
 
         var origin = positions[0];
-        var n1 = positions[1].subtract(origin);
-        var n2 = positions[2].subtract(origin);
-        var normalVec = n1.cross(n2).normalize();
-        Direction normal = Direction.fromDelta((int) normalVec.x, (int) normalVec.y, (int) normalVec.z);
+        var n1 = positions[1].sub(origin, new Vector3f());
+        var n2 = positions[2].sub(origin, new Vector3f());
+        var normalVec = n1.cross(n2, new Vector3f()).normalize();
+
+        Direction normal = Direction.getNearest(normalVec.x, normalVec.y, normalVec.z);
         TextureAtlasSprite sprite = getUvs().getSprite();
 
-        var xy = new double[positions.length][2];
-        var newXy = new double[positions.length][2];
+        var xy = new float[positions.length][2];
+        var newXy = new float[positions.length][2];
         for (int i = 0; i < positions.length; i++) {
             switch (normal.getAxis()) {
                 case Y -> {
@@ -455,7 +455,7 @@ public class Quad {
     
     @SuppressWarnings("null")
     public BakedQuad rebake() {
-        var builder = new QuadBakingVertexConsumer.Buffered();
+        var builder = new QuadBakingVertexConsumer();
         builder.setDirection(this.builder.quadOrientation);
         builder.setTintIndex(this.builder.quadTint);
         builder.setShade(this.builder.applyDiffuseLighting);
@@ -465,7 +465,7 @@ public class Quad {
             vertex.write(builder);
         }
 
-        return builder.getQuad();
+        return builder.bakeQuad();
     }
     
     public Quad transformUVs(TextureAtlasSprite sprite) {
@@ -533,7 +533,7 @@ public class Quad {
         private boolean applyAmbientOcclusion;
 
         private final VertexData[] vertices = new VertexData[4];
-        private VertexData vertex = new VertexData();
+        private boolean building = false;
         private int vertexIndex = 0;
 
         public void copyFrom(BakedQuad baked) {
@@ -545,72 +545,63 @@ public class Quad {
         }
 
         public Quad build() {
+            if (!building || ++vertexIndex != 4) {
+                throw new IllegalStateException("Not enough vertices available. Vertices in buffer: " + vertexIndex);
+            }
             return new Quad(vertices, this, getSprite());
         }
 
         @NotNull
         @Override
-        public VertexConsumer vertex(double x, double y, double z) {
-            vertex.pos(x, y, z);
-            return this;
-        }
-
-        @NotNull
-        @Override
-        public VertexConsumer color(int red, int green, int blue, int alpha) {
-            vertex.color(red, green, blue, alpha);
-            return this;
-        }
-
-        @NotNull
-        @Override
-        public VertexConsumer uv(float u, float v) {
-            vertex.texRaw(u, v);
-            return this;
-        }
-
-        @NotNull
-        @Override
-        public VertexConsumer overlayCoords(int u, int v) {
-            vertex.overlay(u, v);
-            return this;
-        }
-
-        @NotNull
-        @Override
-        public VertexConsumer uv2(int u, int v) {
-            vertex.lightRaw(u, v);
-            return this;
-        }
-
-        @NotNull
-        @Override
-        public VertexConsumer normal(float x, float y, float z) {
-            vertex.normal(x, y, z);
-            return this;
-        }
-
-        @Override
-        public void endVertex() {
-            if (vertexIndex < vertices.length) {
-                vertices[vertexIndex++] = vertex;
-                vertex = new VertexData();
+        public VertexConsumer addVertex(float x, float y, float z) {
+            if (building) {
+                if (++vertexIndex > 4) {
+                    throw new IllegalStateException("Expected quad export after fourth vertex");
+                }
             }
+            building = true;
+            vertices[vertexIndex] = new VertexData().pos(x, y, z);
+            return this;
         }
 
+        @NotNull
         @Override
-        public void defaultColor(int red, int green, int blue, int alpha) {
-            //We don't support having a default color
+        public VertexConsumer setColor(int red, int green, int blue, int alpha) {
+            vertices[vertexIndex].color(red, green, blue, alpha);
+            return this;
         }
 
+        @NotNull
         @Override
-        public void unsetDefaultColor() {
-            //We don't support having a default color
+        public VertexConsumer setUv(float u, float v) {
+            vertices[vertexIndex].texRaw(u, v);
+            return this;
+        }
+
+        @NotNull
+        @Override
+        public VertexConsumer setUv1(int u, int v) {
+            vertices[vertexIndex].overlay(u, v);
+            return this;
+        }
+
+        @NotNull
+        @Override
+        public VertexConsumer setUv2(int u, int v) {
+            vertices[vertexIndex].lightRaw(u, v);
+            return this;
+        }
+
+        @NotNull
+        @Override
+        public VertexConsumer setNormal(float x, float y, float z) {
+            vertices[vertexIndex].normal(x, y, z);
+            return this;
         }
 
         @Override
         public VertexConsumer misc(VertexFormatElement element, int... rawData) {
-            vertex.misc(element, Arrays.copyOf(rawData, rawData.length));
+            vertices[vertexIndex].misc(element, Arrays.copyOf(rawData, rawData.length));
             return this;
         }
     }

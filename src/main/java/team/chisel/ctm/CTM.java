@@ -56,7 +56,7 @@ public class CTM {
     }
 
     private void modelRegistry(ModelEvent.RegisterGeometryLoaders event) {
-        event.register(new ResourceLocation(MOD_ID, "ctm"), ModelLoaderCTM.INSTANCE);
+        event.register(ResourceLocation.fromNamespaceAndPath(MOD_ID, "ctm"), ModelLoaderCTM.INSTANCE);
     }
 
     private void imc(InterModEnqueueEvent event) {
