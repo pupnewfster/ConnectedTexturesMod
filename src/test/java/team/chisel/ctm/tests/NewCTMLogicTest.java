@@ -10,7 +10,6 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 
 import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
-import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer.Buffered;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -38,13 +37,13 @@ public class NewCTMLogicTest {
     
     @Test
     void quad() {
-        QuadBakingVertexConsumer.Buffered builder = new Buffered();
-        builder.vertex(0, 0, 0).uv(0, 0).normal(0, 1, 0).endVertex();
-        builder.vertex(1, 0, 0).uv(1, 0).normal(0, 1, 0).endVertex();
-        builder.vertex(1, 0, 1).uv(1, 1).normal(0, 1, 0).endVertex();
-        builder.vertex(0, 0, 1).uv(0, 1).normal(0, 1, 0).endVertex();
+        QuadBakingVertexConsumer builder = new QuadBakingVertexConsumer();
+        builder.addVertex(0, 0, 0).setUv(0, 0).setNormal(0, 1, 0);
+        builder.addVertex(1, 0, 0).setUv(1, 0).setNormal(0, 1, 0);
+        builder.addVertex(1, 0, 1).setUv(1, 1).setNormal(0, 1, 0);
+        builder.addVertex(0, 0, 1).setUv(0, 1).setNormal(0, 1, 0);
         
-        Quad q = Quad.from(builder.getQuad());
+        Quad q = Quad.from(builder.bakeQuad());
         Quad quarter = q.subsect(Submap.fromPixelScale(8, 8, 0, 0));
         Quad half = q.subsect(Submap.fromPixelScale(8, 16, 0, 0));
         Quad center = q.subsect(Submap.fromPixelScale(8, 8, 4, 4));

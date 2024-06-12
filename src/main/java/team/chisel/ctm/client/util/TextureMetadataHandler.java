@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import org.apache.logging.log4j.message.ParameterizedMessage;
 
 import com.google.common.collect.HashMultimap;
@@ -35,7 +36,7 @@ public enum TextureMetadataHandler {
 
     INSTANCE;
 
-	private final Object2BooleanMap<ResourceLocation> wrappedModels = new Object2BooleanLinkedOpenHashMap<>();
+	private final Object2BooleanMap<ModelResourceLocation> wrappedModels = new Object2BooleanLinkedOpenHashMap<>();
     private final Multimap<ResourceLocation, Material> scrapedTextures = HashMultimap.create();
 
     public void textureScraped(ResourceLocation modelLocation, Material material) {
@@ -108,11 +109,21 @@ public enum TextureMetadataHandler {
     @SubscribeEvent(priority = EventPriority.LOWEST) // low priority to capture all event-registered models
     @SneakyThrows
     public void onModelBake(ModelEvent.ModifyBakingResult event) {
-        Map<ResourceLocation, UnbakedModel> stateModels = ObfuscationReflectionHelper.getPrivateValue(ModelBakery.class, event.getModelBakery(), "unbakedCache");
-        Map<ResourceLocation, BakedModel> models = event.getModels();
-        for (Map.Entry<ResourceLocation, BakedModel> entry : models.entrySet()) {
-            ResourceLocation rl = entry.getKey();
-            UnbakedModel rootModel = stateModels.get(rl);
+        ModelBakery modelBakery = event.getModelBakery();
+        Map<ModelResourceLocation, UnbakedModel> topLevelModels = ObfuscationReflectionHelper.getPrivateValue(ModelBakery.class, modelBakery, "topLevelModels");
+        Map<ResourceLocation, UnbakedModel> unbakedCache = ObfuscationReflectionHelper.getPrivateValue(ModelBakery.class, modelBakery, "unbakedCache");
+        Map<ModelResourceLocation, BakedModel> models = event.getModels();
+        for (Map.Entry<ModelResourceLocation, BakedModel> entry : models.entrySet()) {
+            ModelResourceLocation mrl = entry.getKey();
+            ResourceLocation rl = mrl.id();
+            UnbakedModel rootModel = topLevelModels.get(mrl);
+            if (rootModel == null) {
+                rootModel = unbakedCache.get(rl);
+                if (rootModel != null) {
+                    //TODO - 1.21: Remove this after testing against more complex models to validate if we need to do this or not
+                    CTM.logger.info("Modify baking unbaked cache has an element top level doesn't: {}, {}", rl, mrl);
+                }
+            }
             if (rootModel != null) {
             	BakedModel baked = entry.getValue();
             	if (baked instanceof AbstractCTMBakedModel) {
@@ -125,13 +136,14 @@ public enum TextureMetadataHandler {
                 Set<ResourceLocation> seenModels = new HashSet<>();
                 dependencies.push(rl);
                 seenModels.add(rl);
-                boolean shouldWrap = wrappedModels.getOrDefault(rl, false);
+                boolean shouldWrap = wrappedModels.getOrDefault(mrl, false);
                 // Breadth-first loop through dependencies, exiting as soon as a CTM texture is found, and skipping duplicates/cycles
                 while (!shouldWrap && !dependencies.isEmpty()) {
                     ResourceLocation dep = dependencies.pop();
                     UnbakedModel model;
                     try {
-                         model = dep == rl ? rootModel : event.getModelBakery().getModel(dep);
+                        //TODO - 1.21: Evaluate if this should be using getModel or something that will get the dep as a root model?
+                        model = dep == rl ? rootModel : modelBakery.getModel(dep);
                     } catch (Exception e) {
                         continue;
                     }
@@ -159,7 +171,7 @@ public enum TextureMetadataHandler {
                         CTM.logger.error(new ParameterizedMessage("Error loading model dependency {} for model {}. Skipping...", dep, rl), e);
                     }
                 }
-                wrappedModels.put(rl, shouldWrap);
+                wrappedModels.put(mrl, shouldWrap);
                 if (shouldWrap) {
                     try {
                         entry.setValue(wrap(rootModel, baked));
@@ -187,7 +199,7 @@ public enum TextureMetadataHandler {
                     baked.getModel() instanceof ModelCTM ctmModel && 
                     !ctmModel.isInitialized()) {
                 var baker = event.getModelBakery().new ModelBakerImpl((rl, m) -> m.sprite(), e.getKey());
-                ctmModel.bake(baker, Material::sprite, BlockModelRotation.X0_Y0, e.getKey());
+                ctmModel.bake(baker, Material::sprite, BlockModelRotation.X0_Y0);
                 //Note: We have to clear the cache after baking each model to ensure that we can initialize and capture any textures
                 // that might be done by parent models
                 cache.clear();

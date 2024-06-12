@@ -26,7 +26,7 @@ public class ModelUtil {
         if (shaper instanceof RegistryAwareItemModelShaper registryAwareShaper) {
             return registryAwareShaper.getLocation(stack);
         }
-        return ModelBakery.MISSING_MODEL_LOCATION;
+        return ModelBakery.MISSING_MODEL_VARIANT;
     }
 
 }
