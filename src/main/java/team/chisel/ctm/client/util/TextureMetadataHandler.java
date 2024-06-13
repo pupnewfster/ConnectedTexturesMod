@@ -110,20 +110,9 @@ public enum TextureMetadataHandler {
     @SneakyThrows
     public void onModelBake(ModelEvent.ModifyBakingResult event) {
         ModelBakery modelBakery = event.getModelBakery();
-        Map<ModelResourceLocation, UnbakedModel> topLevelModels = ObfuscationReflectionHelper.getPrivateValue(ModelBakery.class, modelBakery, "topLevelModels");
-        Map<ResourceLocation, UnbakedModel> unbakedCache = ObfuscationReflectionHelper.getPrivateValue(ModelBakery.class, modelBakery, "unbakedCache");
-        Map<ModelResourceLocation, BakedModel> models = event.getModels();
-        for (Map.Entry<ModelResourceLocation, BakedModel> entry : models.entrySet()) {
+        for (Map.Entry<ModelResourceLocation, BakedModel> entry : event.getModels().entrySet()) {
             ModelResourceLocation mrl = entry.getKey();
-            ResourceLocation rl = mrl.id();
-            UnbakedModel rootModel = topLevelModels.get(mrl);
-            if (rootModel == null) {
-                rootModel = unbakedCache.get(rl);
-                if (rootModel != null) {
-                    //TODO - 1.21: Remove this after testing against more complex models to validate if we need to do this or not
-                    CTM.logger.info("Modify baking unbaked cache has an element top level doesn't: {}, {}", rl, mrl);
-                }
-            }
+            UnbakedModel rootModel = modelBakery.topLevelModels.get(mrl);
             if (rootModel != null) {
             	BakedModel baked = entry.getValue();
             	if (baked instanceof AbstractCTMBakedModel) {
@@ -134,6 +123,7 @@ public enum TextureMetadataHandler {
             	}
                 Deque<ResourceLocation> dependencies = new ArrayDeque<>();
                 Set<ResourceLocation> seenModels = new HashSet<>();
+                ResourceLocation rl = mrl.id();
                 dependencies.push(rl);
                 seenModels.add(rl);
                 boolean shouldWrap = wrappedModels.getOrDefault(mrl, false);
@@ -142,7 +132,6 @@ public enum TextureMetadataHandler {
                     ResourceLocation dep = dependencies.pop();
                     UnbakedModel model;
                     try {
-                        //TODO - 1.21: Evaluate if this should be using getModel or something that will get the dep as a root model?
                         model = dep == rl ? rootModel : modelBakery.getModel(dep);
                     } catch (Exception e) {
                         continue;
